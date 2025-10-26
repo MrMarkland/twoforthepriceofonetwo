@@ -1,0 +1,29 @@
+
+
+version: "3.9"
+services:
+  lidar-capture:
+    build: ../services/lidar-capture
+    volumes: [ "./data:/app/data" ]
+
+  fft-analyzer:
+    build: ../services/fft-analyzer
+    depends_on: [ lidar-capture ]
+    volumes: [ "./data:/app/data" ]
+
+  mode-classifier:
+    build: ../services/mode-classifier
+    depends_on: [ fft-analyzer ]
+    volumes: [ "./data:/app/data" ]
+
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports: [ "9000:9000" ]
+    volumes: [ "minio-data:/data" ]
+
+volumes:
+  minio-data:
