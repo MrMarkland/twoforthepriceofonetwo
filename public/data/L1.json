@@ -1,0 +1,7 @@
+
+
+{
+  "frequencies": [1, 2, 3, 4, 5],
+  "amplitude": [2, 3, 5, 4, 6],
+  "delta_f": 0.03
+}
