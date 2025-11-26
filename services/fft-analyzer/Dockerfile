@@ -1,14 +1,7 @@
+FROM python:3.11-slim
 
+WORKDIR /app
 
-import json, numpy as np, os
+COPY analyze.py .
 
-# Simulated FFT output for demo
-freq = np.linspace(1, 5, 5).tolist()
-amp = (np.sin(freq) + 2).tolist()
-data = {"frequencies": freq, "amplitude": amp, "delta_f": 0.03}
-
-os.makedirs("/app/data", exist_ok=True)
-with open("/app/data/L1.json", "w") as f:
-    json.dump(data, f, indent=2)
-
-print("FFT analysis complete → /app/data/L1.json")
+CMD ["python", "analyze.py"]
