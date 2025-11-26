@@ -1,0 +1,67 @@
+substitutions:
+  _REGION: us-central1
+  _PROJECT_ID: your-gcp-project-id
+  _FRONTEND_SERVICE: frontend-web
+  _FFT_SERVICE: fft-analyzer-api
+
+steps:
+  # Build frontend image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/${_PROJECT_ID}/${_FRONTEND_SERVICE}:$SHORT_SHA",
+        "-f",
+        "Dockerfile.frontend",
+        "."
+      ]
+
+  # Build FFT API image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/${_PROJECT_ID}/${_FFT_SERVICE}:$SHORT_SHA",
+        "-f",
+        "backend/fft_api/Dockerfile",
+        "backend/fft_api"
+      ]
+
+  # Push images
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "gcr.io/${_PROJECT_ID}/${_FRONTEND_SERVICE}:$SHORT_SHA"]
+
+  - name: gcr.io/cloud-builders/docker
+    args: ["push", "gcr.io/${_PROJECT_ID}/${_FFT_SERVICE}:$SHORT_SHA"]
+
+  # Deploy FFT API
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      [
+        "run", "deploy", "${_FFT_SERVICE}",
+        "--image", "gcr.io/${_PROJECT_ID}/${_FFT_SERVICE}:$SHORT_SHA",
+        "--region", "${_REGION}",
+        "--platform", "managed",
+        "--allow-unauthenticated"
+      ]
+
+  # Deploy frontend (note FFT_API_BASE env var)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      [
+        "run", "deploy", "${_FRONTEND_SERVICE}",
+        "--image", "gcr.io/${_PROJECT_ID}/${_FRONTEND_SERVICE}:$SHORT_SHA",
+        "--region", "${_REGION}",
+        "--platform", "managed",
+        "--allow-unauthenticated",
+        "--set-env-vars",
+        "FFT_API_BASE=https://${_FFT_SERVICE}-${_REGION}-a.run.app"
+      ]
+
+images:
+  - "gcr.io/${_PROJECT_ID}/${_FRONTEND_SERVICE}:$SHORT_SHA"
+  - "gcr.io/${_PROJECT_ID}/${_FFT_SERVICE}:$SHORT_SHA"
